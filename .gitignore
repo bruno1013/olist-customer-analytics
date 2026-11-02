@@ -235,4 +235,4 @@ data/processed/
 .DS_Store
 
 # Trained models (rebuilt by notebooks/04)
-models/
+/models/

@@ -36,9 +36,12 @@ Project phases follow CRISP-DM (Business Understanding → Data Understanding �
 - [x] Complaint themes (regex) validated with NMF topics; split-shipment hypothesis confirmed
 
 ## Phase 6 — Dashboard
-- [ ] Multipage Streamlit app reading small aggregated parquet files
+- [x] Multipage Streamlit app (6 pages) reading small aggregated parquet files (`src/build_app_data.py`)
 - [ ] Deploy to Streamlit Community Cloud
 
 ## Phase 7 — Storytelling
 - [ ] README: executive summary, method, results, recommendations with R$ impact
 - [ ] 3-minute demo video, LinkedIn post, CV bullet
+
+## Phase 8 — Tableau Public version (for Data Analyst / BI roles)
+- [ ] 1–2 page Tableau Public dashboard with the same data (delivery + customers)
