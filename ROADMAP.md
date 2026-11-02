@@ -7,7 +7,7 @@ Project phases follow CRISP-DM (Business Understanding → Data Understanding �
 ## Phase 0 — Setup
 - [x] Load raw CSVs into SQLite (`src/load_data.py`)
 - [x] Project structure, `requirements.txt`, `.gitignore`
-- [ ] README skeleton
+- [x] README
 
 ## Phase 1 — SQL & Data Understanding
 - [x] Business questions with JOINs, CTEs and window functions (`sql/01_*.sql` …)
@@ -37,10 +37,10 @@ Project phases follow CRISP-DM (Business Understanding → Data Understanding �
 
 ## Phase 6 — Dashboard
 - [x] Multipage Streamlit app (6 pages) reading small aggregated parquet files (`src/build_app_data.py`)
-- [ ] Deploy to Streamlit Community Cloud
+- [x] Deploy to Streamlit Community Cloud (https://olist-customer-analytics01.streamlit.app/)
 
 ## Phase 7 — Storytelling
-- [ ] README: executive summary, method, results, recommendations with R$ impact
+- [x] README: executive summary, method, results, recommendations with impact
 - [ ] 3-minute demo video, LinkedIn post, CV bullet
 
 ## Phase 8 — Tableau Public version (for Data Analyst / BI roles)
