@@ -75,6 +75,7 @@ pay_main AS MATERIALIZED (
 SELECT
     o.order_id,
     c.customer_unique_id,
+    m.seller_id,
     c.customer_state,
     s.seller_state,
     (c.customer_state = s.seller_state)                         AS same_state,

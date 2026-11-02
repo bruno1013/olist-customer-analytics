@@ -20,16 +20,16 @@ Project phases follow CRISP-DM (Business Understanding → Data Understanding �
 - [x] Seller vs carrier delay decomposition; reviews written before delivery
 
 ## Phase 3 — Customers
-- [ ] RFM scores per `customer_unique_id`
-- [ ] K-Means segments + business names
-- [ ] Cohort retention analysis
+- [x] RFM scores per `customer_unique_id` (Frequency as repeat flag: quintiles fail)
+- [x] Rule-based segments + K-Means (k = 4) with business names
+- [x] Cohort retention + does a bad first experience reduce returns? (not significant)
 
 ## Phase 4 — Bad-review prediction (ML)
-- [ ] Define target (score ≤ 2) and prediction moment (right after delivery)
-- [ ] Feature table without leakage
-- [ ] Baseline (logistic regression) → decision tree → LightGBM
-- [ ] Evaluation for imbalanced classes (PR-AUC, recall, F1)
-- [ ] SHAP explanations
+- [x] Define target (score ≤ 2) and prediction moment (right after delivery)
+- [x] Feature table without leakage (`src/features.py`, time-aware seller history)
+- [x] Dummy → logistic regression → decision tree → LightGBM (time-based split)
+- [x] Evaluation for imbalanced classes (PR-AUC, top-10% lift, threshold on validation)
+- [x] SHAP explanations → new finding: multi-seller orders get 47% bad reviews
 
 ## Phase 5 — Review text NLP (Portuguese)
 - [ ] Sentiment with a Portuguese model
