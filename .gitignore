@@ -224,3 +224,12 @@ data/raw/
 CLAUDE.md
 LEARNING_NOTES.md
 data/*.db
+
+# SQL practice drafts (local only)
+sql/drafts/
+
+# Intermediate data (rebuilt by scripts)
+data/processed/
+
+# macOS
+.DS_Store

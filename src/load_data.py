@@ -41,6 +41,18 @@ ZIP_COLUMNS = {
     "geolocation_zip_code_prefix": str,
 }
 
+# Indexes on the columns we JOIN on. Without them, SQLite may have to scan a
+# whole table for every row of another table (very slow on 100k+ rows).
+INDEXES = {
+    "orders": ["order_id", "customer_id"],
+    "order_items": ["order_id", "product_id", "seller_id"],
+    "payments": ["order_id"],
+    "reviews": ["order_id"],
+    "customers": ["customer_id", "customer_unique_id"],
+    "products": ["product_id"],
+    "sellers": ["seller_id"],
+}
+
 
 def load_all():
     """Read every CSV and write it to SQLite as its own table."""
@@ -60,6 +72,16 @@ def load_all():
             df.to_sql(table_name, conn, if_exists="replace", index=False)
 
             print(f"{table_name:<22} {len(df):>9,} rows  {df.shape[1]:>2} columns")
+
+        # Tables were just replaced, so their old indexes are gone: rebuild them.
+        for table_name, columns in INDEXES.items():
+            for column in columns:
+                conn.execute(
+                    f"CREATE INDEX IF NOT EXISTS idx_{table_name}_{column} "
+                    f"ON {table_name} ({column})"
+                )
+        conn.commit()
+        print(f"\nCreated indexes on {sum(len(c) for c in INDEXES.values())} columns")
     finally:
         # Always close the connection, even if something above fails.
         conn.close()

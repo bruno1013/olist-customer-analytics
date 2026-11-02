@@ -1,1 +1,21 @@
-pandas
+# Data handling
+pandas>=3.0
+numpy>=2.3
+pyarrow>=20.0
+
+# Statistics and machine learning
+scipy>=1.16
+statsmodels>=0.14
+scikit-learn>=1.8
+lightgbm>=4.6
+shap>=0.50
+
+# Visualisation and dashboard
+matplotlib>=3.10
+plotly>=6.0
+streamlit>=1.50
+
+# Notebooks and code quality
+jupyter
+ipykernel
+ruff
