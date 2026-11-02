@@ -32,8 +32,8 @@ Project phases follow CRISP-DM (Business Understanding → Data Understanding �
 - [x] SHAP explanations → new finding: multi-seller orders get 47% bad reviews
 
 ## Phase 5 — Review text NLP (Portuguese)
-- [ ] Sentiment with a Portuguese model
-- [ ] Complaint topics
+- [x] Text classifier trained on review scores (TF-IDF + logistic regression, PR-AUC 0.80)
+- [x] Complaint themes (regex) validated with NMF topics; split-shipment hypothesis confirmed
 
 ## Phase 6 — Dashboard
 - [ ] Multipage Streamlit app reading small aggregated parquet files
