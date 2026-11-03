@@ -1,7 +1,7 @@
 """
 Build the small, aggregated files the Streamlit dashboard reads.
 
-Usage (from the project root, after running notebooks 03-05):
+Usage (from the project root, after running notebooks 02-04):
     .venv/bin/python src/build_app_data.py
 
 Result: app/data/*.parquet and app/models/*.joblib. They are small enough to

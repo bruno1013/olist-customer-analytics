@@ -35,7 +35,7 @@ End-to-end data science project on ~100k orders from [Olist](https://www.kaggle.
 
 ## Results in more detail
 
-### 1. Logistics and satisfaction ([notebook 02](notebooks/02_eda_logistics.ipynb))
+### 1. Logistics and satisfaction ([notebook 01](notebooks/01_eda_logistics.ipynb))
 
 | | |
 |---|---|
@@ -46,7 +46,7 @@ End-to-end data science project on ~100k orders from [Olist](https://www.kaggle.
 - Checks: chi-square test, relative risk with confidence interval, Mann-Whitney U, and a logistic regression controlling for state to rule out regional confounding. The regression gives an **odds ratio** of 15.6. That is not a contradiction of the 6.7x **relative risk**: with a common outcome (62% bad reviews) odds grow much faster than probabilities.
 - `review_creation_date` is the day the survey is **sent**, not answered (`review_answer_timestamp`). Splitting by answer time shows that most of the late-delivery effect comes from customers who had not yet received their order.
 
-### 2. Customers ([notebook 03](notebooks/03_customers.ipynb))
+### 2. Customers ([notebook 02](notebooks/02_customers.ipynb))
 
 | | |
 |---|---|
@@ -56,7 +56,7 @@ End-to-end data science project on ~100k orders from [Olist](https://www.kaggle.
 - K-Means (k = 4, chosen with elbow and silhouette plus business judgement) agrees closely with the rule-based segments.
 - A bad first experience lowers the return rate only slightly and **not significantly** (1.60% vs 1.97%, p = 0.135). Retention is low for everyone, so it needs active levers.
 
-### 3. Bad-review risk model ([notebook 04](notebooks/04_bad_review_model.ipynb))
+### 3. Bad-review risk model ([notebook 03](notebooks/03_bad_review_model.ipynb))
 
 | | |
 |---|---|
@@ -83,7 +83,7 @@ End-to-end data science project on ~100k orders from [Olist](https://www.kaggle.
 
 Many bad reviews still come from causes that are not in the structured data, which motivated the text analysis.
 
-### 4. What customers say ([notebook 05](notebooks/05_review_text.ipynb))
+### 4. What customers say ([notebook 04](notebooks/04_review_text.ipynb))
 
 | | |
 |---|---|
@@ -114,8 +114,7 @@ The project follows **CRISP-DM**:
 
 ```
 ├── app/                    Streamlit dashboard (small aggregated data + trained models)
-├── notebooks/              02 EDA · 03 customers · 04 risk model · 05 review text
-│                           (phase 1 is the SQL in sql/, so notebooks start at 02)
+├── notebooks/              01 EDA · 02 customers · 03 risk model · 04 review text
 ├── reports/figures/        Charts used in this README
 ├── sql/                    01–06 analysis queries
 ├── src/
@@ -138,7 +137,7 @@ python3 -m venv .venv
 
 .venv/bin/python src/load_data.py          # CSVs → data/olist.db
 .venv/bin/python src/build_datasets.py     # → data/processed/orders.parquet
-# run notebooks 02 → 05 in order (they save processed data and models)
+# run notebooks 01 → 04 in order (they save processed data and models)
 cd src && ../.venv/bin/python build_app_data.py && cd ..
 .venv/bin/streamlit run app/streamlit_app.py
 ```

@@ -84,9 +84,9 @@ The project follows **CRISP-DM**:
 |---|---|---|
 | Business understanding | Retention problem, reviews as a reputation driver | — |
 | Data understanding | SQL on 9 tables (JOINs, CTEs, window functions) | [`sql/`]({REPO_URL}/tree/main/sql) |
-| Data preparation | One-row-per-order dataset, leakage-safe features | [`02_eda_logistics`]({REPO_URL}/blob/main/notebooks/02_eda_logistics.ipynb) |
-| Modeling | RFM + K-Means, LightGBM risk model, text classifier, NMF | [`03`]({REPO_URL}/blob/main/notebooks/03_customers.ipynb) · [`04`]({REPO_URL}/blob/main/notebooks/04_bad_review_model.ipynb) · [`05`]({REPO_URL}/blob/main/notebooks/05_review_text.ipynb) |
-| Evaluation | Statistical tests, time-based split, PR-AUC and lift | 02–05 |
+| Data preparation | One-row-per-order dataset, leakage-safe features | [`01_eda_logistics`]({REPO_URL}/blob/main/notebooks/01_eda_logistics.ipynb) |
+| Modeling | RFM + K-Means, LightGBM risk model, text classifier, NMF | [`02`]({REPO_URL}/blob/main/notebooks/02_customers.ipynb) · [`03`]({REPO_URL}/blob/main/notebooks/03_bad_review_model.ipynb) · [`04`]({REPO_URL}/blob/main/notebooks/04_review_text.ipynb) |
+| Evaluation | Statistical tests, time-based split, PR-AUC and lift | 01–04 |
 | Deployment | This dashboard | [`app/`]({REPO_URL}/tree/main/app) |
 """
 )
