@@ -13,20 +13,23 @@ model = load_model("bad_review_lgbm")
 
 st.title("🤖 Bad-review risk model")
 st.markdown(
-    "Right after an order is delivered, the model scores how likely the customer is to leave a "
-    "1–2★ review, so customer service can **contact the riskiest orders first**."
+    "On the day Olist sends the satisfaction survey, the model scores how likely the customer is to "
+    "leave a 1–2★ review, so customer service can **contact the riskiest orders first**."
 )
 
 with st.expander("How the model was built (and how leakage was avoided)"):
     st.markdown(
         """
-- **Target:** review score 1–2. **Prediction moment:** right after delivery.
-- **Only information known at delivery** is used — never the review text or date. Reviews written
-  *before* the parcel arrived are excluded (nothing left to predict).
-- **Seller history** (past bad-review rate) is computed only from reviews available before each delivery.
+- **Target:** review score 1–2. **Prediction moment:** the day the survey is sent
+  (`review_creation_date`: the day after delivery, or ~2 days after the promised date if the parcel
+  has not arrived). An earlier version predicted "after delivery" and lost ~75% of late orders.
+- **Only information known that day** is used: has the order arrived, how late it is so far; delivery
+  and carrier times only if it has arrived. Never the review text or answer.
+- **Seller history** (past bad-review rate) uses only reviews **answered** before the survey day.
 - **Time-based split:** train Jan 2017–Feb 2018, validate Mar–Apr 2018, test **May–Aug 2018**.
-- Models: dummy baseline → logistic regression → decision tree → **LightGBM**, tuned on validation;
-  the test set was used once.
+- Models: dummy and a "late orders first" rule → logistic regression → decision tree → **LightGBM**,
+  tuned on validation; the test set was used once. Logistic regression is almost as good (PR-AUC 0.32
+  vs 0.34); LightGBM is kept because it handles not-yet-delivered orders natively.
 """
     )
 
@@ -45,12 +48,12 @@ st.dataframe(
     },
 )
 st.caption(
-    "Accuracy is misleading here: the dummy model scores ~92% by never flagging anything. "
-    "PR-AUC of a random model ≈ the bad-review rate (0.085)."
+    "Accuracy is misleading here: the dummy model scores ~90% by never flagging anything. "
+    "PR-AUC of a random model ≈ the bad-review rate (0.10)."
 )
 
 st.subheader("2. Business view: how many orders should we contact?")
-share = st.slider("Share of delivered orders customer service can contact", 1, 50, 10, format="%d%%") / 100
+share = st.slider("Share of orders customer service can contact", 1, 50, 10, format="%d%%") / 100
 
 y = preds["is_bad_review"].to_numpy()
 risk = preds["risk"].to_numpy()
@@ -91,19 +94,30 @@ with left:
 with right:
     st.subheader("4. What-if simulator")
     st.caption("Start from a typical order and change the key drivers.")
+    waiting = st.toggle("Parcel still on its way when the survey is sent")
     c1, c2 = st.columns(2)
-    days = c1.slider("Days to deliver", 1, 60, 10)
-    delay = c2.slider("Days late (negative = early)", -30, 30, -10)
+    days = c1.slider("Days to deliver" if not waiting else "Days promised", 1, 60, 10 if not waiting else 24)
+    delay = c2.slider("Days late (negative = early)", -30, 30, -10) if not waiting else 2
     items = c1.slider("Items in the order", 1, 6, 1)
     sellers = c2.slider("Sellers in the order", 1, 3, 1)
     seller_rate = st.slider("Seller's past bad-review rate", 0.0, 0.5, 0.10, step=0.01, format="%.2f")
 
     x = template.copy()
-    x["days_to_deliver"] = days
-    x["delay_days"] = delay
-    x["is_late"] = float(delay > 0)
-    x["days_promised"] = max(days - delay, 1)
-    x["carrier_days"] = max(days - x["seller_days"].iloc[0], 0)
+    if waiting:
+        # survey goes out ~2 days after the promised date; delivery fields are unknown
+        x["delivered_at_survey"], x["is_late"] = 0.0, 1.0
+        x["days_promised"] = days
+        x["days_late_at_survey"] = delay
+        x["days_since_purchase"] = days + delay
+        x[["days_to_deliver", "delay_days", "carrier_days"]] = np.nan
+    else:
+        x["delivered_at_survey"] = 1.0
+        x["days_to_deliver"] = days
+        x["delay_days"] = x["days_late_at_survey"] = delay
+        x["is_late"] = float(delay > 0)
+        x["days_promised"] = max(days - delay, 1)
+        x["days_since_purchase"] = days + 1          # survey sent the day after delivery
+        x["carrier_days"] = max(days - x["seller_days"].iloc[0], 0)
     x["n_items"] = items
     x["n_sellers"] = min(sellers, items)
     x["seller_prior_bad_rate"] = seller_rate

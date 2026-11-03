@@ -22,7 +22,7 @@ OUT_DIR = PROJECT_ROOT / "data" / "processed"
 # SQLite stores dates as text and booleans as 0/1, so we fix the types here.
 DATE_COLUMNS = [
     "purchase_ts", "approved_ts", "carrier_ts",
-    "delivered_ts", "estimated_ts", "review_ts",
+    "delivered_ts", "estimated_ts", "review_ts", "answer_ts",
 ]
 # "boolean" (capital-B pandas type) allows missing values, e.g. is_bad_review
 # is missing for orders without a review.

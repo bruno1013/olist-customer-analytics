@@ -44,7 +44,10 @@ FEATURE_NAMES = {
     "payment_type": "Payment type",
     "purchase_dow": "Day of week",
     "customer_prior_orders": "Customer's past orders",
-    "is_late": "Delivered late",
+    "is_late": "Late (vs promise)",
+    "delivered_at_survey": "Delivered by survey day",
+    "days_late_at_survey": "Days late on survey day",
+    "days_since_purchase": "Days since purchase (survey day)",
     "same_state": "Seller in same state",
 }
 

@@ -42,10 +42,11 @@ with right:
     st.markdown(
         f"""
 1. **Late deliveries drive bad reviews.** A late order is **6.7x** more likely to get 1–2 stars
-   (62% vs 9%), in every state.
+   (62% vs 9%), in every state. Most of it comes from customers who get the survey while still
+   waiting: 70% of them answer before the parcel arrives.
 2. **The carrier is the bottleneck.** Late orders spend a median of **26 days** with the carrier
    vs 7 for on-time orders. The Northeast is hit hardest.
-3. **Half of complaints are about delivery, not the product** — "not received" is the #1 theme,
+3. **Half of complaints are about delivery, not the product** — "not received" is the #1 theme (half of it written before delivery),
    and multi-seller orders suffer from **split shipments** (47% bad reviews even when on time).
 4. **Almost nobody comes back.** Only **{pct(kpis['repeat_rate'])}** of customers buy twice, yet
    "at-risk big spenders" hold 40% of revenue — a clear win-back target.

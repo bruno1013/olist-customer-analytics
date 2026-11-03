@@ -1,18 +1,29 @@
 """
 Feature engineering for the bad-review model (Phase 4).
 
-Prediction moment: right after the order is DELIVERED. Every feature must be
-known at that moment, otherwise the model "sees the future" (data leakage).
+Prediction moment: the day Olist SENDS the satisfaction survey (`review_ts`,
+from review_creation_date). Olist sends it the day after delivery or, if the
+parcel has not arrived, about 2 days after the promised date. Every feature
+must be known on that day, otherwise the model "sees the future" (data leakage).
+
+Why this moment and not "right after delivery"? Most customers whose order is
+late answer the survey BEFORE the parcel arrives. A model built at delivery time
+would have to drop those orders, i.e. ~70% of all late orders, which are the
+main source of bad reviews.
 """
 
+import numpy as np
 import pandas as pd
 
 TARGET = "is_bad_review"
 
 NUMERIC_FEATURES = [
-    # delivery
-    "delay_days", "days_to_deliver", "days_promised",
-    "approval_hours", "seller_days", "carrier_days",
+    # delivery status on the survey day
+    "days_late_at_survey", "days_since_purchase", "days_promised",
+    # delivery outcome: only known if the order was delivered by the survey day (else NaN)
+    "delay_days", "days_to_deliver", "carrier_days",
+    # seller stage
+    "approval_hours", "seller_days",
     # basket and payment
     "n_items", "n_sellers", "revenue", "freight", "freight_ratio",
     "product_weight_g", "product_photos_qty", "installments",
@@ -21,54 +32,78 @@ NUMERIC_FEATURES = [
     # calendar
     "purchase_dow",
 ]
-BOOL_FEATURES = ["is_late", "same_state"]
+BOOL_FEATURES = ["delivered_at_survey", "is_late", "same_state"]
 CATEGORICAL_FEATURES = ["customer_state", "seller_state", "category", "payment_type"]
 FEATURES = NUMERIC_FEATURES + BOOL_FEATURES + CATEGORICAL_FEATURES
 
 # Smoothing for the seller's bad-review rate: a seller with 1 review that was
 # bad should not get a 100% rate. We blend it with a prior of PRIOR_RATE,
-# worth PRIOR_WEIGHT "virtual" reviews. PRIOR_RATE ≈ the overall bad-review
-# rate for reviews written after delivery.
-PRIOR_RATE = 0.10
+# worth PRIOR_WEIGHT "virtual" reviews. PRIOR_RATE ≈ the overall bad-review rate.
+PRIOR_RATE = 0.12
 PRIOR_WEIGHT = 5
 
 
 def modelling_rows(orders):
-    """Keep orders where a prediction at delivery time makes sense.
-
-    - must have a review (we need the label)
-    - the review must be written on/after the delivery day: if the customer
-      already reviewed before the parcel arrived, there is nothing to predict
-    - complete months only (Jan 2017 – Aug 2018)
-    """
+    """Keep orders with a label, in complete months (Jan 2017 – Aug 2018)."""
     df = orders.dropna(subset=["review_score"])
-    df = df[df["review_ts"].dt.normalize() >= df["delivered_ts"].dt.normalize()]
     df = df[(df["purchase_ts"] >= "2017-01-01") & (df["purchase_ts"] < "2018-09-01")]
     return df.copy()
 
 
-def add_seller_history(df, all_orders):
-    """Seller's track record using ONLY reviews available before this delivery.
+def add_survey_day_features(df):
+    """What Olist knows about the delivery on the survey day.
 
-    review_ts is a date at midnight, so a review dated day D may have been written
-    late on day D. We treat it as available from D + 1 day to be safe.
+    review_ts is a date at midnight. The survey is triggered by the delivery, so
+    an order delivered on the survey day itself counts as delivered.
     """
-    reviews = all_orders.dropna(subset=["review_ts"])[["seller_id", "review_ts", TARGET]].copy()
-    reviews["available_ts"] = reviews["review_ts"] + pd.Timedelta(days=1)
+    day = pd.Timedelta(days=1)
+    survey_day = df["review_ts"].dt.normalize()
+    delivered_day = df["delivered_ts"].dt.normalize()
+    promised_day = df["estimated_ts"].dt.normalize()
+
+    df["delivered_at_survey"] = delivered_day <= survey_day
+    known = df["delivered_at_survey"]
+
+    # Days late so far: vs the delivery day if delivered, else vs the survey day.
+    # (An order still on its way on the survey day is already past its promise.)
+    reference_day = delivered_day.where(known, survey_day)
+    df["days_late_at_survey"] = (reference_day - promised_day) / day
+    df["days_since_purchase"] = (survey_day - df["purchase_ts"]) / day
+
+    # is_late is safe: an order not delivered by the survey day is already late.
+    # Delivery-outcome columns are NOT safe for undelivered orders: hide them.
+    for col in ["delay_days", "days_to_deliver"]:
+        df[col] = df[col].where(known)
+    df["carrier_days"] = ((df["delivered_ts"] - df["carrier_ts"]) / day).where(known)
+
+    # Hand-over to the carrier is known only if it happened before the survey day
+    df["seller_days"] = ((df["carrier_ts"] - df["purchase_ts"]) / day).where(
+        df["carrier_ts"] < survey_day + day
+    )
+    return df
+
+
+def add_seller_history(df, all_orders):
+    """Seller's track record using ONLY reviews answered before this order's survey day.
+
+    A review exists only once the customer ANSWERS the survey (answer_ts), not
+    when the survey is sent, so answer_ts is the moment it becomes available.
+    """
+    reviews = all_orders.dropna(subset=["answer_ts"])[["seller_id", "answer_ts", TARGET]].copy()
     reviews["bad"] = reviews[TARGET].astype(int)
-    reviews = reviews.sort_values("available_ts")
+    reviews = reviews.sort_values("answer_ts")
 
     by_seller = reviews.groupby("seller_id")
     reviews["seller_prior_reviews"] = by_seller.cumcount() + 1
     reviews["seller_prior_bad"] = by_seller["bad"].cumsum()
 
-    # merge_asof = "for each order, take the most recent seller row whose
-    # available_ts is strictly before the delivery time" (a time-aware join)
-    left = df[["order_id", "seller_id", "delivered_ts"]].sort_values("delivered_ts")
-    hist = reviews[["seller_id", "available_ts", "seller_prior_reviews", "seller_prior_bad"]]
+    # merge_asof = "for each order, take the most recent seller row answered
+    # strictly before the survey day" (a time-aware join)
+    left = df[["order_id", "seller_id", "review_ts"]].sort_values("review_ts")
+    hist = reviews[["seller_id", "answer_ts", "seller_prior_reviews", "seller_prior_bad"]]
     merged = pd.merge_asof(
         left, hist,
-        left_on="delivered_ts", right_on="available_ts",
+        left_on="review_ts", right_on="answer_ts",
         by="seller_id", allow_exact_matches=False,
     )
     merged[["seller_prior_reviews", "seller_prior_bad"]] = (
@@ -94,13 +129,10 @@ def add_customer_history(df, all_orders):
 def build_features(orders):
     """Return the modelling table: features + target + purchase_ts (for the time split)."""
     df = modelling_rows(orders)
+    df = add_survey_day_features(df)
 
-    hours = pd.Timedelta(hours=1)
-    days = pd.Timedelta(days=1)
-    df["approval_hours"] = (df["approved_ts"] - df["purchase_ts"]) / hours
-    df["seller_days"] = (df["carrier_ts"] - df["purchase_ts"]) / days
-    df["carrier_days"] = (df["delivered_ts"] - df["carrier_ts"]) / days
-    df["freight_ratio"] = df["freight"] / df["revenue"]
+    df["approval_hours"] = (df["approved_ts"] - df["purchase_ts"]) / pd.Timedelta(hours=1)
+    df["freight_ratio"] = df["freight"] / df["revenue"].replace(0, np.nan)
     df["purchase_dow"] = df["purchase_ts"].dt.dayofweek
 
     df = add_seller_history(df, orders)

@@ -95,7 +95,8 @@ st.plotly_chart(style(fig, height=340), width="stretch")
 
 st.info(
     "**Takeaways.** Promises are padded (12.6 days actual vs 23.7 promised) yet 6.8% of orders are late, "
-    "and a late order is ~6.7x more likely to get a bad review. Delays concentrate in the carrier stage "
+    "and a late order is ~6.7x more likely to get a bad review (2x when the customer answers after the "
+    "parcel arrives; most answer before). Delays concentrate in the carrier stage "
     "and in the Northeast (AL, MA ≈ 4–5x São Paulo's late rate). Orders split across sellers get 47% "
     "bad reviews even when they arrive on time."
 )

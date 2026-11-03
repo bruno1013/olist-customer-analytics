@@ -25,9 +25,9 @@ Project phases follow CRISP-DM (Business Understanding → Data Understanding �
 - [x] Cohort retention + does a bad first experience reduce returns? (not significant)
 
 ## Phase 4 — Bad-review prediction (ML)
-- [x] Define target (score ≤ 2) and prediction moment (right after delivery)
-- [x] Feature table without leakage (`src/features.py`, time-aware seller history)
-- [x] Dummy → logistic regression → decision tree → LightGBM (time-based split)
+- [x] Define target (score ≤ 2) and prediction moment (day the survey is sent, fixed 2026-11-03: `review_creation_date` is the survey date, not the answer date)
+- [x] Feature table without leakage (`src/features.py`, time-aware seller history on `answer_ts`)
+- [x] Dummy and "late first" rule → logistic regression → decision tree → LightGBM (time-based split)
 - [x] Evaluation for imbalanced classes (PR-AUC, top-10% lift, threshold on validation)
 - [x] SHAP explanations → new finding: multi-seller orders get 47% bad reviews
 

@@ -5,6 +5,7 @@ from utils import REPO_URL, load, pct
 impact = load("impact").set_index("problem")
 segments = load("segments").set_index("segment")
 late = impact.loc["Late deliveries"]
+early_answer = impact.loc["Survey answered before delivery"]
 multi_item = impact.loc["Multi-item orders (2+ items)"]
 at_risk = segments.loc["At-risk big spender"]
 
@@ -22,10 +23,12 @@ recs = pd.DataFrame([
     },
     {
         "Priority": 2,
-        "Recommendation": "Proof of delivery (photo / signature) and carrier audits",
-        "Evidence": "\"Not received\" is the #1 complaint (30% of bad comments) — 20% even on orders "
-                    "delivered on time.",
-        "Size of the prize": "The largest complaint theme",
+        "Recommendation": "Don't survey customers who are still waiting: send a status update instead, "
+                          "and survey after delivery",
+        "Evidence": "70% of late-order customers answer the survey before the parcel arrives; 81% of them "
+                    "give 1–2★. Half of all \"not received\" complaints are written before delivery.",
+        "Size of the prize": f"Up to {pct(early_answer['share_of_all_bad_reviews'], 0)} of all bad reviews "
+                             f"(~{early_answer['bad_reviews_avoidable']:,.0f})",
     },
     {
         "Priority": 3,
@@ -38,7 +41,8 @@ recs = pd.DataFrame([
     {
         "Priority": 4,
         "Recommendation": "Proactive customer-service contacts using the risk model",
-        "Evidence": "Contacting the riskiest 10% of delivered orders reaches 30% of bad reviews (3x random).",
+        "Evidence": "On the survey day, contacting the riskiest 10% of orders reaches 38% of bad reviews "
+                    "(3.8x random; a 'late orders first' rule reaches 24%).",
         "Size of the prize": "Prevent or soften bad reviews before they are written",
     },
     {

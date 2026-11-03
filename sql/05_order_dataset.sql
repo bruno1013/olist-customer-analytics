@@ -15,6 +15,7 @@ WITH reviews_clean AS MATERIALIZED (
             order_id,
             review_score,
             review_creation_date,
+            review_answer_timestamp,
             review_comment_message,
             ROW_NUMBER() OVER (PARTITION BY order_id
                                ORDER BY review_answer_timestamp DESC) AS rn
@@ -109,7 +110,11 @@ SELECT
     -- review (NULL when the order has no review)
     r.review_score,
     (r.review_score <= 2)                                       AS is_bad_review,
+    -- review_creation_date = day Olist SENT the satisfaction survey (the day
+    -- after delivery, or ~2 days after the promised date if not yet delivered).
+    -- review_answer_timestamp = when the customer actually answered it.
     r.review_creation_date                                      AS review_ts,
+    r.review_answer_timestamp                                   AS answer_ts,
     r.review_comment_message                                    AS review_comment
 FROM orders o
 JOIN customers c          ON c.customer_id = o.customer_id

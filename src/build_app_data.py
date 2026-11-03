@@ -194,6 +194,8 @@ def build_impact(reviewed):
     rows = []
     for name, mask in [
         ("Late deliveries", reviewed["is_late"].fillna(False).astype(bool)),
+        # customers who answered the survey while the parcel was still on its way
+        ("Survey answered before delivery", reviewed["answer_ts"] < reviewed["delivered_ts"]),
         ("Multi-seller orders", reviewed["n_sellers"] >= 2),
         ("Multi-item orders (2+ items)", reviewed["n_items"] >= 2),
     ]:
