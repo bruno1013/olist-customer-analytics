@@ -65,13 +65,18 @@ def add_survey_day_features(df):
     known = df["delivered_at_survey"]
 
     # Days late so far: vs the delivery day if delivered, else vs the survey day.
-    # (An order still on its way on the survey day is already past its promise.)
     reference_day = delivered_day.where(known, survey_day)
     df["days_late_at_survey"] = (reference_day - promised_day) / day
     df["days_since_purchase"] = (survey_day - df["purchase_ts"]) / day
 
-    # is_late is safe: an order not delivered by the survey day is already late.
-    # Delivery-outcome columns are NOT safe for undelivered orders: hide them.
+    # is_late as known ON the survey day. Delivered: the final answer. Not delivered:
+    # only whether the promised day has already passed. Usually the survey for an
+    # undelivered order goes out ~2 days after the promise, but ~280 orders were
+    # surveyed while still in transit BEFORE their promised day; their final
+    # is_late (mostly "on time") is the future, so using it would be leakage.
+    df["is_late"] = df["is_late"].where(known, survey_day > promised_day)
+
+    # Delivery-outcome columns are NOT known for undelivered orders: hide them.
     for col in ["delay_days", "days_to_deliver"]:
         df[col] = df[col].where(known)
     df["carrier_days"] = ((df["delivered_ts"] - df["carrier_ts"]) / day).where(known)
@@ -80,6 +85,15 @@ def add_survey_day_features(df):
     df["seller_days"] = ((df["carrier_ts"] - df["purchase_ts"]) / day).where(
         df["carrier_ts"] < survey_day + day
     )
+
+    # Guards: nothing from after the survey day may reach an undelivered order.
+    waiting = ~known
+    assert df.loc[waiting, ["delay_days", "days_to_deliver", "carrier_days"]].isna().all().all(), \
+        "delivery outcome leaked into orders not yet delivered on the survey day"
+    assert (df.loc[waiting, "is_late"] == (survey_day > promised_day)[waiting]).all(), \
+        "is_late of undelivered orders must be 'promise already passed on the survey day'"
+    assert (df.loc[waiting, "days_late_at_survey"] == ((survey_day - promised_day) / day)[waiting]).all(), \
+        "days_late_at_survey of undelivered orders must be measured on the survey day"
     return df
 
 

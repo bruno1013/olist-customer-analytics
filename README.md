@@ -64,22 +64,25 @@ End-to-end data science project on ~100k orders from [Olist](https://www.kaggle.
 
 | Model (test: May–Aug 2018) | PR-AUC | ROC-AUC | Lift @ top 10% |
 |---|---|---|---|
-| Random baseline | 0.100 | 0.50 | 1.0x |
-| Rule: late orders first | 0.209 | 0.57 | 2.4x |
-| Logistic regression | 0.323 | 0.73 | 3.7x |
-| Decision tree (depth 5) | 0.305 | 0.72 | 3.6x |
-| **LightGBM** | **0.337** | **0.72** | **3.8x** |
+| Random baseline | 0.100 | 0.500 | 1.0x |
+| Rule: late orders first | 0.209 | 0.571 | 2.4x |
+| Logistic regression | 0.323 | 0.725 | 3.7x |
+| Decision tree (depth 5) | 0.302 | 0.716 | 3.6x |
+| **LightGBM** | **0.338** | 0.725 | **3.8x** |
 
 **A bug I found and fixed.** The first version treated `review_creation_date` as the day the customer wrote the review. In fact it is the day Olist **sends the survey**. The model predicted "right after delivery" and dropped reviews dated before delivery, which silently removed **~75% of late orders**, the main cause of bad reviews (test PR-AUC 0.21). Moving the prediction to the survey day keeps every order and raised PR-AUC to **0.34**.
 
 **How leakage is avoided:**
 - The prediction is made on the **day the survey is sent**, using only what is known then: whether the parcel has arrived and how late it is so far. Delivery and carrier times are used only if it has arrived.
+- For an order still in transit, "late" means the promised day had **already passed** on the survey day, not the final outcome. This matters for ~280 orders surveyed before their promised day (most of them then arrived on time). `src/features.py` asserts that no delivery outcome reaches an order not yet delivered.
 - The seller's past bad-review rate uses only reviews **answered** before that day, via a **time-aware join** (`merge_asof`).
 - The split is **time-based**, and the test set was used once.
 
+**Why is validation PR-AUC (0.60) much higher than test (0.34)?** Not overfitting: the validation months (Mar–Apr 2018) include a delivery crisis. 19% of March orders were late and validation has a 16.5% bad-review rate, against 1–7% late orders and a 10.0% bad-review rate in the test months (May–Aug 2018). Lateness is the easiest signal to score, so PR-AUC rises and falls with it; the rule "late orders first" shows the same drop (0.48 → 0.21).
+
 **Does it beat the obvious?** Yes. It beats the "late first" rule, and on orders already delivered by the survey day, where lateness explains little, it still doubles the rule (PR-AUC 0.20 vs 0.09).
 
-**Why LightGBM?** Logistic regression is almost as good (PR-AUC 0.32, same ROC-AUC) and is a defensible, more explainable choice. LightGBM is slightly better on the top 10% and handles the missing delivery fields of not-yet-delivered orders natively, so it powers the dashboard.
+**Why LightGBM?** Logistic regression is almost as good (PR-AUC 0.32, same ROC-AUC 0.725) and is a defensible, more explainable choice. LightGBM is slightly better on the top 10% and handles the missing delivery fields of not-yet-delivered orders natively, so it powers the dashboard.
 
 Many bad reviews still come from causes that are not in the structured data, which motivated the text analysis.
 
